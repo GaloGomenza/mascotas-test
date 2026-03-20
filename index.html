@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #fafafa; }
+        .task { margin-bottom: 25px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 15px; font-size: 18px; width: 100%; cursor: pointer; background: #e0e0e0; border: none; border-radius: 5px; font-weight: bold; }
+        button:active { background: #ccc; }
+        p { font-weight: bold; margin-top: 10px; color: #333; }
+        small { color: #666; display: block; font-weight: normal; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<h2 id="welcome">Cargando...</h2>
+
+<div class="task">
+    <button id="btnMiaFed">Mia Comió 🐈</button>
+    <p id="txtMiaFed">...</p>
+</div>
+
+<div class="task">
+    <button id="btnOttoFed">Budín comió 🦮</button>
+    <p id="txtOttoFed">...</p>
+</div>
+
+<div class="task">
+    <button id="btnOttoWalk">Budín salió a pasear 🌳</button>
+    <p id="txtOttoWalk">...</p>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyD92HYIeUXnjfSWZCH4N3Q4zn6QNsxwpqk",
+        authDomain: "mascotas-test.firebaseapp.com",
+        projectId: "mascotas-test",
+        storageBucket: "mascotas-test.firebasestorage.app",
+        messagingSenderId: "780299092011",
+        appId: "1:780299092011:web:7a660de1acec0e371b2a6e",
+        databaseURL: "https://mascotas-test-default-rtdb.firebaseio.com"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // --- NAME LOGIC ---
+    let userName = localStorage.getItem('petAppName');
+    if (!userName) {
+        userName = prompt("Insertar nombre:");
+        if (!userName) userName = "Alguien";
+        localStorage.setItem('petAppName', userName);
+    }
+    document.getElementById('welcome').innerText = "Hola, " + userName + ".";
+
+    // --- TASK LOGIC ---
+    function setupTask(buttonId, textId, dbKey) {
+        const btn = document.getElementById(buttonId);
+        const txt = document.getElementById(textId);
+        const dataRef = ref(db, 'tasks/' + dbKey);
+
+        onValue(dataRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const time = new Date(data.time).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+                txt.innerHTML = `Última vez: ${time} <br> <small>por ${data.user}</small>`;
+            } else {
+                txt.innerText = "Última vez: nunca";
+            }
+        });
+
+        btn.onclick = () => {
+            set(dataRef, {
+                time: Date.now(),
+                user: userName
+            });
+        };
+    }
+
+    setupTask('btnMiaFed', 'txtMiaFed', 'miaFed');
+    setupTask('btnOttoFed', 'txtOttoFed', 'ottoFed');
+    setupTask('btnOttoWalk', 'txtOttoWalk', 'ottoWalked');
+</script>
+</body>
+</html>
